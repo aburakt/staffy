@@ -69,3 +69,55 @@ export enum DocumentType {
   TAX_FORM = "TAX_FORM",
   OTHER = "OTHER"
 }
+
+// Attendance Types
+export interface AttendanceRecord {
+  id?: number;
+  staff?: Staff;
+  date: string;
+  clockInTime?: string;
+  clockOutTime?: string;
+  breakStartTime?: string;
+  breakEndTime?: string;
+  status: AttendanceStatus;
+  totalWorkMinutes?: number;
+  overtimeMinutes?: number;
+  breakMinutes?: number;
+  clockInLocation?: string;
+  clockOutLocation?: string;
+  clockInIpAddress?: string;
+  clockOutIpAddress?: string;
+  notes?: string;
+  approved: boolean;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
+export enum AttendanceStatus {
+  PRESENT = "PRESENT",
+  ABSENT = "ABSENT",
+  LATE = "LATE",
+  EARLY_LEAVE = "EARLY_LEAVE",
+  OVERTIME = "OVERTIME",
+  HALF_DAY = "HALF_DAY"
+}
+
+export enum AttendanceType {
+  CLOCK_IN = "CLOCK_IN",
+  CLOCK_OUT = "CLOCK_OUT",
+  BREAK_START = "BREAK_START",
+  BREAK_END = "BREAK_END"
+}
+
+export interface MonthlyReport {
+  staffId: number;
+  year: number;
+  month: number;
+  totalWorkHours: number;
+  totalOvertimeHours: number;
+  presentDays: number;
+  absentDays: number;
+  lateDays: number;
+  workingDays: number;
+  records: AttendanceRecord[];
+}
