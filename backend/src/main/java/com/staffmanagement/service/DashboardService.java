@@ -38,8 +38,8 @@ public class DashboardService {
         List<LeaveRequest> activeLeaves = leaveRequestRepository.findAll().stream()
                 .filter(lr -> lr.getStatus() == LeaveStatus.APPROVED)
                 .filter(lr -> {
-                    LocalDate start = LocalDate.parse(lr.getStartDate());
-                    LocalDate end = LocalDate.parse(lr.getEndDate());
+                    LocalDate start = lr.getStartDate();
+                    LocalDate end = lr.getEndDate();
                     return !today.isBefore(start) && !today.isAfter(end);
                 })
                 .toList();
@@ -49,15 +49,15 @@ public class DashboardService {
         // Staff on leave details
         List<DashboardStats.StaffOnLeave> staffOnLeave = activeLeaves.stream()
                 .map(lr -> {
-                    LocalDate endDate = LocalDate.parse(lr.getEndDate());
+                    LocalDate endDate = lr.getEndDate();
                     int daysRemaining = (int) ChronoUnit.DAYS.between(today, endDate);
 
                     return new DashboardStats.StaffOnLeave(
                             lr.getStaff().getId(),
                             lr.getStaff().getFirstName() + " " + lr.getStaff().getLastName(),
                             lr.getLeaveType().toString(),
-                            lr.getStartDate(),
-                            lr.getEndDate(),
+                            lr.getStartDate().toString(),
+                            lr.getEndDate().toString(),
                             Math.max(0, daysRemaining)
                     );
                 })

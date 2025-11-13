@@ -62,8 +62,8 @@ public class LeaveCertificateService {
         contentRun = contentPara.createRun();
         contentRun.setText(" (T.C. Kimlik No: __________) adlı personelimize, ");
 
-        LocalDate startDate = LocalDate.parse(leaveRequest.getStartDate());
-        LocalDate endDate = LocalDate.parse(leaveRequest.getEndDate());
+        LocalDate startDate = leaveRequest.getStartDate();
+        LocalDate endDate = leaveRequest.getEndDate();
         long daysBetween = ChronoUnit.DAYS.between(startDate, endDate) + 1;
 
         boldRun = contentPara.createRun();
@@ -123,7 +123,7 @@ public class LeaveCertificateService {
         detailsRun.addBreak();
         detailsRun.setText("Departman: " + staff.getDepartment());
         detailsRun.addBreak();
-        detailsRun.setText("İşe Başlama Tarihi: " + LocalDate.parse(staff.getHireDate()).format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+        detailsRun.setText("İşe Başlama Tarihi: " + staff.getHireDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
         detailsRun.addBreak();
         detailsRun.addBreak();
         detailsRun.addBreak();

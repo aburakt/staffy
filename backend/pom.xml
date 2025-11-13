@@ -49,13 +49,11 @@
         </dependency>
 
         <!-- H2 Database - Optional for development/testing -->
-        <!-- Uncomment if you want to use H2 instead of PostgreSQL
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        -->
 
         <!-- Lombok -->
         <dependency>
