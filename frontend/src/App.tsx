@@ -5,6 +5,8 @@ import StaffList from './pages/StaffList';
 import StaffDetail from './pages/StaffDetail';
 import LeaveRequests from './pages/LeaveRequests';
 import LeaveRequestForm from './pages/LeaveRequestForm';
+import AttendanceClock from './pages/AttendanceClock';
+import AttendanceReports from './pages/AttendanceReports';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="staff/:id" element={<StaffDetail />} />
           <Route path="leaves" element={<LeaveRequests />} />
           <Route path="leaves/new" element={<LeaveRequestForm />} />
+          <Route path="attendance" element={<AttendanceClock />} />
+          <Route path="attendance/reports" element={<AttendanceReports />} />
         </Route>
       </Routes>
     </BrowserRouter>

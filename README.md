@@ -7,27 +7,50 @@ A comprehensive staff management application built with Spring Boot and React, f
 ## Features
 
 - **Staff Management**: Add, update, view, and manage staff members
+  - Table and card view toggle with smooth animations
+  - Comprehensive staff details with documents and leave history
 - **Leave Tracking**: Track annual leave days, used days, and remaining balance
 - **Leave Requests**: Submit, approve, and reject leave requests
+  - Download professional leave certificates (Word .docx format)
+  - Turkish-formatted official leave certificates
+- **Attendance Tracking** ⭐ NEW
+  - Clock in/out system with automatic overtime calculation
+  - Break time tracking
+  - Monthly attendance reports with charts
+  - GPS location and IP address logging
+  - Late detection and status tracking
 - **Document Management**: Store and manage staff documents (contracts, ID cards, certificates, etc.)
-- **Dashboard**: Overview of staff statistics and recent leave requests
-- **Contact Information**: Store and display staff contact details
+- **Enhanced Dashboard**: Comprehensive statistics and insights
+  - Real-time staff on leave tracking with return dates
+  - Document completion status overview
+  - Quick certificate generation from dashboard
+  - Animated statistics cards with trends
+- **Modern UI**: Beautiful animations powered by Framer Motion
+  - Staggered entrance animations
+  - Smooth transitions between views
+  - Interactive hover effects
+  - Loading states with custom spinners
 
 ## Tech Stack
 
 ### Backend
 - **Spring Boot 3.2.0** - Java framework
-- **Spring Data JPA** - Database access
+- **Spring Data JPA** - Database access with automatic calculations
 - **PostgreSQL** - Production database (H2 also supported for development)
+- **Apache POI 5.2.5** - Word document generation (.docx)
 - **Lombok** - Reduces boilerplate code
 - **Maven** - Dependency management
 
 ### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Navigation
-- **Tailwind CSS** - Styling
+- **React 19.2.0** - Latest React version with new features
+- **React Compiler 1.0.0** - Automatic memoization and optimization
+- **TypeScript 5.9.3** - Type safety
+- **Vite 7.2.2** - Build tool and dev server
+- **Framer Motion 12.23.24** - Animation library
+- **Recharts 3.4.1** - Chart library for reports
+- **date-fns 4.1.0** - Date manipulation
+- **React Router 7.9.5** - Navigation
+- **Tailwind CSS 4.1.17** - Styling
 - **shadcn/ui** - UI components
 - **Lucide React** - Icons
 
@@ -106,6 +129,7 @@ The frontend will start on `http://localhost:5173`
 - `POST /api/leave-requests/staff/{staffId}` - Create leave request
 - `PUT /api/leave-requests/{id}/approve` - Approve leave request
 - `PUT /api/leave-requests/{id}/reject` - Reject leave request
+- `GET /api/leave-requests/{id}/certificate` - Download leave certificate (Word .docx)
 - `DELETE /api/leave-requests/{id}` - Delete leave request
 
 ### Document Endpoints
@@ -115,6 +139,19 @@ The frontend will start on `http://localhost:5173`
 - `POST /api/documents/staff/{staffId}` - Create document
 - `PUT /api/documents/{id}` - Update document
 - `DELETE /api/documents/{id}` - Delete document
+
+### Attendance Endpoints ⭐ NEW
+- `POST /api/attendance/staff/{staffId}/clock-in` - Clock in for work
+- `PUT /api/attendance/staff/{staffId}/clock-out` - Clock out from work
+- `PUT /api/attendance/staff/{staffId}/break-start` - Start break
+- `PUT /api/attendance/staff/{staffId}/break-end` - End break
+- `GET /api/attendance/staff/{staffId}` - Get attendance records
+- `GET /api/attendance/staff/{staffId}/date/{date}` - Get attendance by date
+- `GET /api/attendance/staff/{staffId}/monthly-report` - Get monthly report
+
+### Dashboard Endpoints ⭐ NEW
+- `GET /api/dashboard/stats` - Get comprehensive dashboard statistics
+- `GET /api/dashboard/document-completion` - Get document completion details
 
 ## Project Structure
 
@@ -138,15 +175,26 @@ frontend/
 ├── src/
 │   ├── components/      # Reusable components
 │   │   ├── ui/         # shadcn/ui components
+│   │   ├── animated/   # Animated components with Framer Motion
+│   │   │   ├── StatsCard.tsx       # Animated statistics card
+│   │   │   ├── StaffCard.tsx       # Staff card with animations
+│   │   │   ├── ViewToggle.tsx      # Table/Card view switcher
+│   │   │   └── LoadingSpinner.tsx  # Animated loading spinner
 │   │   └── Layout.tsx  # Main layout
 │   ├── pages/          # Page components
-│   │   ├── Dashboard.tsx
-│   │   ├── StaffList.tsx
+│   │   ├── Dashboard.tsx          # Enhanced dashboard with stats
+│   │   ├── StaffList.tsx          # Staff list with view toggle
 │   │   ├── StaffDetail.tsx
-│   │   ├── LeaveRequests.tsx
-│   │   └── LeaveRequestForm.tsx
+│   │   ├── LeaveRequests.tsx      # With certificate download
+│   │   ├── LeaveRequestForm.tsx
+│   │   ├── AttendanceClock.tsx    # Clock in/out interface
+│   │   └── AttendanceReports.tsx  # Monthly reports with charts
 │   ├── services/       # API services
+│   │   └── api.ts     # staffApi, leaveRequestApi, attendanceApi,
+│   │                  # dashboardApi, certificateApi
 │   ├── types/          # TypeScript types
+│   │   └── index.ts   # Staff, LeaveRequest, AttendanceRecord,
+│   │                  # DashboardStats, etc.
 │   └── lib/            # Utilities
 └── ...
 ```

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Clock } from 'lucide-react';
 
 export default function Layout() {
   const location = useLocation();
@@ -8,6 +8,7 @@ export default function Layout() {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Staff', href: '/staff', icon: Users },
     { name: 'Leave Requests', href: '/leaves', icon: Calendar },
+    { name: 'Attendance', href: '/attendance', icon: Clock },
   ];
 
   const isActive = (path: string) => {

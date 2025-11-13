@@ -121,3 +121,32 @@ export interface MonthlyReport {
   workingDays: number;
   records: AttendanceRecord[];
 }
+
+// Dashboard Stats Types
+export interface DashboardStats {
+  totalStaff: number;
+  activeStaff: number;
+  onLeaveStaff: number;
+  staffOnLeaveList: StaffOnLeave[];
+  pendingLeaveRequests: number;
+  documentCompletionStats: Record<string, number>;
+  totalDocumentsRequired: number;
+  totalDocumentsUploaded: number;
+}
+
+export interface StaffOnLeave {
+  staffId: number;
+  staffName: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  daysRemaining: number;
+}
+
+export interface StaffDocumentStatus {
+  staffId: number;
+  staffName: string;
+  totalDocuments: number;
+  missingDocuments: number;
+  missingDocumentTypes: string[];
+}
