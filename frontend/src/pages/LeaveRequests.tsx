@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { leaveRequestApi, certificateApi } from '@/services/api';
+import { leaveRequestApi, certificateApi, exportApi } from '@/services/api';
 import type { LeaveRequest } from '@/types';
 import { LeaveStatus } from '@/types';
-import { Plus, Check, X, Download } from 'lucide-react';
+import { Plus, Check, X, Download, FileDown } from 'lucide-react';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
 
 export default function LeaveRequests() {
@@ -74,16 +74,32 @@ export default function LeaveRequests() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await exportApi.exportLeaveRequests();
+      exportApi.downloadBlob(blob, 'leave_requests.csv');
+    } catch (error) {
+      console.error('Failed to export leave requests:', error);
+      alert('Failed to export leave requests data');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Leave Requests</h1>
-        <Link to="/leaves/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Leave Request
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleExport}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export CSV
           </Button>
-        </Link>
+          <Link to="/leaves/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Leave Request
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>

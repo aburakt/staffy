@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { staffApi } from '@/services/api';
+import { staffApi, exportApi } from '@/services/api';
 import type { Staff } from '@/types';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Eye, Download } from 'lucide-react';
 import { ViewToggle } from '@/components/animated/ViewToggle';
 import { StaffCard } from '@/components/animated/StaffCard';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
@@ -31,6 +31,16 @@ export default function StaffList() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await exportApi.exportStaff();
+      exportApi.downloadBlob(blob, 'staff.csv');
+    } catch (error) {
+      console.error('Failed to export staff:', error);
+      alert('Failed to export staff data');
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -48,6 +58,10 @@ export default function StaffList() {
         </motion.h1>
         <div className="flex gap-3 items-center">
           <ViewToggle view={view} onViewChange={setView} />
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
           <Link to="/staff/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />

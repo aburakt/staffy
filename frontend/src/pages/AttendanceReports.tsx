@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { staffApi, attendanceApi } from '@/services/api';
+import { staffApi, attendanceApi, exportApi } from '@/services/api';
 import type { Staff, AttendanceRecord } from '@/types';
 import { AttendanceStatus } from '@/types';
-import { Calendar, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, AlertCircle, FileDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
 import { StatsCard } from '@/components/animated/StatsCard';
@@ -96,6 +97,23 @@ export default function AttendanceReports() {
     return format(new Date(timeString), 'HH:mm');
   };
 
+  const handleExport = async () => {
+    if (!selectedStaffId) {
+      alert('Please select a staff member');
+      return;
+    }
+
+    try {
+      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+      const blob = await exportApi.exportAttendance(parseInt(selectedStaffId), startDate, endDate);
+      exportApi.downloadBlob(blob, `attendance_${selectedStaffId}_${year}_${month}.csv`);
+    } catch (error) {
+      console.error('Failed to export attendance:', error);
+      alert('Failed to export attendance data');
+    }
+  };
+
   const selectedStaff = staff.find(s => s.id?.toString() === selectedStaffId);
   const stats = calculateStats();
   const chartData = prepareChartData();
@@ -110,14 +128,20 @@ export default function AttendanceReports() {
 
   return (
     <div className="space-y-6">
-      <motion.h1
-        className="text-3xl font-bold"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        Attendance Reports
-      </motion.h1>
+      <div className="flex justify-between items-center">
+        <motion.h1
+          className="text-3xl font-bold"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Attendance Reports
+        </motion.h1>
+        <Button variant="outline" onClick={handleExport} disabled={!selectedStaffId}>
+          <FileDown className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

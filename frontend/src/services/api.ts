@@ -287,3 +287,44 @@ export const certificateApi = {
     return response.blob();
   },
 };
+
+// Export API
+export const exportApi = {
+  exportStaff: async (): Promise<Blob> => {
+    const response = await fetch(`${API_BASE_URL}/export/staff`);
+    if (!response.ok) throw new Error('Failed to export staff');
+    return response.blob();
+  },
+
+  exportAttendance: async (staffId?: number, startDate?: string, endDate?: string): Promise<Blob> => {
+    const params = new URLSearchParams();
+    if (staffId) params.append('staffId', staffId.toString());
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const url = `${API_BASE_URL}/export/attendance${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to export attendance');
+    return response.blob();
+  },
+
+  exportLeaveRequests: async (staffId?: number): Promise<Blob> => {
+    const url = staffId
+      ? `${API_BASE_URL}/export/leave-requests?staffId=${staffId}`
+      : `${API_BASE_URL}/export/leave-requests`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to export leave requests');
+    return response.blob();
+  },
+
+  downloadBlob: (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+};
