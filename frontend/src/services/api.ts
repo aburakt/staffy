@@ -1,4 +1,4 @@
-import { Staff, LeaveRequest, Document } from '@/types';
+import { Staff, LeaveRequest, Document, AttendanceRecord, MonthlyReport } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -123,5 +123,124 @@ export const documentApi = {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete document');
+  },
+};
+
+// Attendance API
+export const attendanceApi = {
+  getAll: async (): Promise<AttendanceRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/attendance`);
+    if (!response.ok) throw new Error('Failed to fetch attendance records');
+    return response.json();
+  },
+
+  getById: async (id: number): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch attendance record');
+    return response.json();
+  },
+
+  getByStaffId: async (staffId: number): Promise<AttendanceRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}`);
+    if (!response.ok) throw new Error('Failed to fetch staff attendance');
+    return response.json();
+  },
+
+  getTodayAttendance: async (staffId: number): Promise<AttendanceRecord | null> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/today`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error('Failed to fetch today attendance');
+    return response.json();
+  },
+
+  getByDateRange: async (staffId: number, startDate: string, endDate: string): Promise<AttendanceRecord[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/attendance/staff/${staffId}/range?startDate=${startDate}&endDate=${endDate}`
+    );
+    if (!response.ok) throw new Error('Failed to fetch attendance range');
+    return response.json();
+  },
+
+  clockIn: async (staffId: number, location?: string): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/clock-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: location || 'Web App' }),
+    });
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to clock in');
+    }
+    return response.json();
+  },
+
+  clockOut: async (staffId: number, location?: string): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/clock-out`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: location || 'Web App' }),
+    });
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to clock out');
+    }
+    return response.json();
+  },
+
+  startBreak: async (staffId: number): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/break-start`, {
+      method: 'PUT',
+    });
+    if (!response.ok) throw new Error('Failed to start break');
+    return response.json();
+  },
+
+  endBreak: async (staffId: number): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/break-end`, {
+      method: 'PUT',
+    });
+    if (!response.ok) throw new Error('Failed to end break');
+    return response.json();
+  },
+
+  approve: async (id: number, approver: string): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/${id}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approver }),
+    });
+    if (!response.ok) throw new Error('Failed to approve attendance');
+    return response.json();
+  },
+
+  update: async (id: number, attendance: Partial<AttendanceRecord>): Promise<AttendanceRecord> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(attendance),
+    });
+    if (!response.ok) throw new Error('Failed to update attendance');
+    return response.json();
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete attendance');
+  },
+
+  getMonthlyReport: async (staffId: number, year: number, month: number): Promise<MonthlyReport> => {
+    const response = await fetch(
+      `${API_BASE_URL}/attendance/staff/${staffId}/monthly-report?year=${year}&month=${month}`
+    );
+    if (!response.ok) throw new Error('Failed to fetch monthly report');
+    return response.json();
+  },
+
+  getPendingApprovals: async (): Promise<AttendanceRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/pending-approvals`);
+    if (!response.ok) throw new Error('Failed to fetch pending approvals');
+    return response.json();
   },
 };
