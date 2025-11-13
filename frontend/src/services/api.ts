@@ -1,4 +1,4 @@
-import { Staff, LeaveRequest, Document, AttendanceRecord, MonthlyReport } from '@/types';
+import { Staff, LeaveRequest, Document, AttendanceRecord, MonthlyReport, DashboardStats, StaffDocumentStatus } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -242,5 +242,29 @@ export const attendanceApi = {
     const response = await fetch(`${API_BASE_URL}/attendance/pending-approvals`);
     if (!response.ok) throw new Error('Failed to fetch pending approvals');
     return response.json();
+  },
+};
+
+// Dashboard API
+export const dashboardApi = {
+  getStats: async (): Promise<DashboardStats> => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
+    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+    return response.json();
+  },
+
+  getDocumentCompletion: async (): Promise<StaffDocumentStatus[]> => {
+    const response = await fetch(`${API_BASE_URL}/dashboard/document-completion`);
+    if (!response.ok) throw new Error('Failed to fetch document completion');
+    return response.json();
+  },
+};
+
+// Certificate API
+export const certificateApi = {
+  downloadLeaveCertificate: async (leaveRequestId: number): Promise<Blob> => {
+    const response = await fetch(`${API_BASE_URL}/leave-requests/${leaveRequestId}/certificate`);
+    if (!response.ok) throw new Error('Failed to download certificate');
+    return response.blob();
   },
 };

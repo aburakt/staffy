@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { leaveRequestApi } from '@/services/api';
+import { leaveRequestApi, certificateApi } from '@/services/api';
 import { LeaveRequest, LeaveStatus } from '@/types';
-import { Plus, Check, X } from 'lucide-react';
+import { Plus, Check, X, Download } from 'lucide-react';
+import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
 
 export default function LeaveRequests() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
     loadLeaveRequests();
@@ -51,6 +53,26 @@ export default function LeaveRequests() {
     }
   };
 
+  const handleDownloadCertificate = async (id: number) => {
+    try {
+      setDownloadingId(id);
+      const blob = await certificateApi.downloadLeaveCertificate(id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `izin-belgesi-${id}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Failed to download certificate:', error);
+      alert('Failed to download certificate');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -69,7 +91,7 @@ export default function LeaveRequests() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading...</div>
+            <LoadingSpinner />
           ) : (
             <Table>
               <TableHeader>
@@ -107,16 +129,28 @@ export default function LeaveRequests() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {leave.status === LeaveStatus.PENDING && (
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleApprove(leave.id!)}>
-                            <Check className="h-4 w-4 text-green-600" />
+                      <div className="flex gap-2">
+                        {leave.status === LeaveStatus.PENDING && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => handleApprove(leave.id!)}>
+                              <Check className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleReject(leave.id!)}>
+                              <X className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </>
+                        )}
+                        {leave.status === LeaveStatus.APPROVED && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadCertificate(leave.id!)}
+                            disabled={downloadingId === leave.id}
+                          >
+                            <Download className="h-4 w-4 text-blue-600" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleReject(leave.id!)}>
-                            <X className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

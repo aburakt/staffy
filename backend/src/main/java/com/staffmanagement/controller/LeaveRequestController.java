@@ -2,13 +2,17 @@ package com.staffmanagement.controller;
 
 import com.staffmanagement.model.LeaveRequest;
 import com.staffmanagement.model.LeaveStatus;
+import com.staffmanagement.service.LeaveCertificateService;
 import com.staffmanagement.service.LeaveRequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LeaveRequestController {
     private final LeaveRequestService leaveRequestService;
+    private final LeaveCertificateService leaveCertificateService;
 
     @GetMapping
     public ResponseEntity<List<LeaveRequest>> getAllLeaveRequests() {
@@ -63,5 +68,22 @@ public class LeaveRequestController {
     public ResponseEntity<Void> deleteLeaveRequest(@PathVariable Long id) {
         leaveRequestService.deleteLeaveRequest(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/certificate")
+    public ResponseEntity<byte[]> downloadLeaveCertificate(@PathVariable Long id) {
+        try {
+            byte[] document = leaveCertificateService.generateLeaveCertificate(id);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "izin_belgesi_" + id + ".docx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(document);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
