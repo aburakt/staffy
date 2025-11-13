@@ -188,13 +188,21 @@ For detailed setup and development guide in Turkish, see [GELISTIRME_REHBERI.md]
 
 ## Documentation
 
-- **[KURULUM_ADIMLAR.md](KURULUM_ADIMLAR.md)** - Quick setup guide (Turkish)
-- **[GELISTIRME_REHBERI.md](GELISTIRME_REHBERI.md)** - Comprehensive development guide (Turkish)
+### 📖 Turkish Documentation
+
+- **[HIZLI_COZUM.md](HIZLI_COZUM.md)** - Quick troubleshooting guide (START HERE!)
+- **[KURULUM_ADIMLAR.md](KURULUM_ADIMLAR.md)** - Step-by-step setup guide
+- **[GELISTIRME_REHBERI.md](GELISTIRME_REHBERI.md)** - Comprehensive development guide
   - PostgreSQL setup
   - LazyVim development workflow
   - Project structure explanations
   - Feature implementation guide
   - 10 future feature suggestions
+
+### 🔧 Troubleshooting
+
+- **[SORUN_GIDERME.md](SORUN_GIDERME.md)** - Common issues and solutions
+- **[POSTGRESQL_MACOS.md](POSTGRESQL_MACOS.md)** - PostgreSQL setup on macOS
 
 ## Contributing
 
