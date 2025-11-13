@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { dashboardApi, certificateApi } from '@/services/api';
-import { DashboardStats } from '@/types';
+import type { DashboardStats } from '@/types';
 import { Users, Calendar, Clock, CheckCircle, FileText, AlertCircle, Download } from 'lucide-react';
 import { StatsCard } from '@/components/animated/StatsCard';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';

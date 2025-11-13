@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { leaveRequestApi, certificateApi } from '@/services/api';
-import { LeaveRequest, LeaveStatus } from '@/types';
+import type { LeaveRequest } from '@/types';
+import { LeaveStatus } from '@/types';
 import { Plus, Check, X, Download } from 'lucide-react';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
 

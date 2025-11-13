@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { staffApi, attendanceApi } from '@/services/api';
-import { Staff, AttendanceRecord, AttendanceStatus } from '@/types';
+import type { Staff, AttendanceRecord } from '@/types';
+import { AttendanceStatus } from '@/types';
 import { Clock, LogIn, LogOut, Coffee, Play, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
@@ -129,8 +130,8 @@ export default function AttendanceClock() {
 
   const selectedStaff = staff.find(s => s.id?.toString() === selectedStaffId);
   const isOnBreak = todayAttendance?.status === AttendanceStatus.ON_BREAK;
-  const isClockedIn = todayAttendance && !todayAttendance.clockOutTime;
-  const isClockedOut = todayAttendance && todayAttendance.clockOutTime;
+  const isClockedIn = !!(todayAttendance && !todayAttendance.clockOutTime);
+  const isClockedOut = !!(todayAttendance && todayAttendance.clockOutTime);
 
   if (loading) {
     return <LoadingSpinner />;

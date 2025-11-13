@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Staff } from '@/types';
+import type { Staff } from '@/types';
 import { Mail, Phone, Briefcase, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

@@ -1,4 +1,4 @@
-import { Staff, LeaveRequest, Document, AttendanceRecord, MonthlyReport, DashboardStats, StaffDocumentStatus } from '@/types';
+import type { Staff, LeaveRequest, Document, AttendanceRecord, DashboardStats, StaffDocumentStatus } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -146,6 +146,13 @@ export const attendanceApi = {
     return response.json();
   },
 
+  getByDate: async (staffId: number, date: string): Promise<AttendanceRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/date/${date}`);
+    if (response.status === 404) return [];
+    if (!response.ok) throw new Error('Failed to fetch attendance by date');
+    return response.json();
+  },
+
   getTodayAttendance: async (staffId: number): Promise<AttendanceRecord | null> => {
     const response = await fetch(`${API_BASE_URL}/attendance/staff/${staffId}/today`);
     if (response.status === 404) return null;
@@ -203,6 +210,15 @@ export const attendanceApi = {
     return response.json();
   },
 
+  // Aliases for compatibility
+  breakStart: async (staffId: number): Promise<AttendanceRecord> => {
+    return attendanceApi.startBreak(staffId);
+  },
+
+  breakEnd: async (staffId: number): Promise<AttendanceRecord> => {
+    return attendanceApi.endBreak(staffId);
+  },
+
   approve: async (id: number, approver: string): Promise<AttendanceRecord> => {
     const response = await fetch(`${API_BASE_URL}/attendance/${id}/approve`, {
       method: 'PUT',
@@ -230,12 +246,15 @@ export const attendanceApi = {
     if (!response.ok) throw new Error('Failed to delete attendance');
   },
 
-  getMonthlyReport: async (staffId: number, year: number, month: number): Promise<MonthlyReport> => {
+  getMonthlyReport: async (staffId: number, year: number, month: number): Promise<AttendanceRecord[]> => {
     const response = await fetch(
       `${API_BASE_URL}/attendance/staff/${staffId}/monthly-report?year=${year}&month=${month}`
     );
     if (!response.ok) throw new Error('Failed to fetch monthly report');
-    return response.json();
+    const report = await response.json();
+    // If backend returns MonthlyReport object with records array, extract it
+    // Otherwise return the array directly
+    return Array.isArray(report) ? report : (report.records || []);
   },
 
   getPendingApprovals: async (): Promise<AttendanceRecord[]> => {
