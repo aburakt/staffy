@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { staffApi, leaveRequestApi, documentApi } from '@/services/api';
-import { Staff, LeaveRequest, Document } from '@/types';
+import type { Staff, LeaveRequest, Document } from '@/types';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 
 export default function StaffDetail() {

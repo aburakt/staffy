@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { staffApi, leaveRequestApi } from '@/services/api';
-import { Staff, LeaveRequest, LeaveType } from '@/types';
+import type { Staff, LeaveRequest } from '@/types';
+import { LeaveType } from '@/types';
 
 export default function LeaveRequestForm() {
   const navigate = useNavigate();

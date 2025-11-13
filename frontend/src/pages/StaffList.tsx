@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { staffApi } from '@/services/api';
-import { Staff } from '@/types';
+import type { Staff } from '@/types';
 import { Plus, Eye } from 'lucide-react';
 import { ViewToggle } from '@/components/animated/ViewToggle';
 import { StaffCard } from '@/components/animated/StaffCard';
