@@ -1,3 +1,4 @@
+// Staff Management Types
 export interface Staff {
   id?: number;
   firstName: string;
