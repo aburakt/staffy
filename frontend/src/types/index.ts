@@ -83,12 +83,14 @@ export interface AttendanceRecord {
   totalWorkMinutes?: number;
   overtimeMinutes?: number;
   breakMinutes?: number;
+  breakDurationMinutes?: number;
+  location?: string;
   clockInLocation?: string;
   clockOutLocation?: string;
   clockInIpAddress?: string;
   clockOutIpAddress?: string;
   notes?: string;
-  approved: boolean;
+  approved?: boolean;
   approvedAt?: string;
   approvedBy?: string;
 }
@@ -99,7 +101,8 @@ export enum AttendanceStatus {
   LATE = "LATE",
   EARLY_LEAVE = "EARLY_LEAVE",
   OVERTIME = "OVERTIME",
-  HALF_DAY = "HALF_DAY"
+  HALF_DAY = "HALF_DAY",
+  ON_BREAK = "ON_BREAK"
 }
 
 export enum AttendanceType {
@@ -137,10 +140,13 @@ export interface DashboardStats {
 export interface StaffOnLeave {
   staffId: number;
   staffName: string;
+  department: string;
   leaveType: string;
   startDate: string;
   endDate: string;
   daysRemaining: number;
+  daysUntilReturn: number;
+  leaveRequestId: number;
 }
 
 export interface StaffDocumentStatus {
