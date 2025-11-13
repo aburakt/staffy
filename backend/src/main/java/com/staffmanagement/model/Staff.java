@@ -49,6 +49,12 @@ public class Staff {
     @Column(name = "remaining_leave_days")
     private Integer remainingLeaveDays = 20;
 
+    @Column(name = "carried_over_leave_days")
+    private Integer carriedOverLeaveDays = 0; // Leave days carried over from previous year
+
+    @Column(name = "last_carryover_year")
+    private Integer lastCarryoverYear; // Track when last carryover was done
+
     private Boolean active = true;
 
     @OneToMany(mappedBy = "staff", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -58,6 +64,32 @@ public class Staff {
     private List<Document> documents = new ArrayList<>();
 
     public void calculateRemainingLeaveDays() {
-        this.remainingLeaveDays = this.annualLeaveDays - this.usedLeaveDays;
+        this.remainingLeaveDays = this.annualLeaveDays + this.carriedOverLeaveDays - this.usedLeaveDays;
+    }
+
+    /**
+     * Process year-end carryover. Unused leave days are carried over (max 5 days)
+     * and used leave days are reset for the new year.
+     */
+    public void processYearEndCarryover(int currentYear) {
+        if (this.lastCarryoverYear != null && this.lastCarryoverYear >= currentYear) {
+            // Already processed for this year
+            return;
+        }
+
+        // Calculate unused days from current year
+        int unusedDays = this.remainingLeaveDays;
+
+        // Maximum 5 days can be carried over
+        this.carriedOverLeaveDays = Math.min(unusedDays, 5);
+
+        // Reset used days for new year
+        this.usedLeaveDays = 0;
+
+        // Update last carryover year
+        this.lastCarryoverYear = currentYear;
+
+        // Recalculate remaining days
+        calculateRemainingLeaveDays();
     }
 }

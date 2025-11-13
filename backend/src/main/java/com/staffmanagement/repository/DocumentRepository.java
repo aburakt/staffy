@@ -11,4 +11,5 @@ import java.util.List;
 public interface DocumentRepository extends JpaRepository<Document, Long> {
     List<Document> findByStaffId(Long staffId);
     List<Document> findByDocumentType(DocumentType documentType);
+    List<Document> findByStaffIdIn(List<Long> staffIds);
 }

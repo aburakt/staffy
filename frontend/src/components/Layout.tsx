@@ -1,8 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Clock, LogOut, User } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
 
 export default function Layout() {
   const location = useLocation();
+  const { user, logout } = useUser();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -44,6 +46,26 @@ export default function Layout() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* User Info and Logout */}
+            <div className="flex items-center space-x-4">
+              {user && (
+                <>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <User className="mr-2 h-4 w-4 text-gray-500" />
+                    <span className="font-medium">{user.firstName} {user.lastName}</span>
+                    <span className="ml-2 text-gray-500">({user.role})</span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

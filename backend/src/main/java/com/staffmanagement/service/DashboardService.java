@@ -6,6 +6,8 @@ import com.staffmanagement.repository.DocumentRepository;
 import com.staffmanagement.repository.LeaveRequestRepository;
 import com.staffmanagement.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,11 +18,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+    private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
+
     private final StaffRepository staffRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final DocumentRepository documentRepository;
 
     public DashboardStats getDashboardStats() {
+        logger.debug("Generating dashboard stats");
         DashboardStats stats = new DashboardStats();
 
         // Staff counts
@@ -65,19 +70,30 @@ public class DashboardService {
                 .count();
         stats.setPendingLeaveRequests((int) pendingRequests);
 
-        // Document completion stats
+        // Document completion stats - OPTIMIZED to avoid N+1 query
         List<DocumentType> requiredDocTypes = Arrays.asList(
                 DocumentType.CONTRACT,
                 DocumentType.ID_CARD,
                 DocumentType.TAX_FORM
         );
 
+        // Fetch all staff IDs
+        List<Long> staffIds = allStaff.stream().map(Staff::getId).collect(Collectors.toList());
+
+        // BATCH QUERY: Fetch all documents in one query instead of N queries
+        List<Document> allDocuments = documentRepository.findByStaffIdIn(staffIds);
+        logger.debug("Fetched {} documents for {} staff members in single query", allDocuments.size(), staffIds.size());
+
+        // Group documents by staff ID
+        Map<Long, List<Document>> documentsByStaffId = allDocuments.stream()
+                .collect(Collectors.groupingBy(doc -> doc.getStaff().getId()));
+
         Map<String, Integer> docStats = new HashMap<>();
         int totalRequired = allStaff.size() * requiredDocTypes.size();
         int totalUploaded = 0;
 
         for (Staff staff : allStaff) {
-            List<Document> staffDocs = documentRepository.findByStaffId(staff.getId());
+            List<Document> staffDocs = documentsByStaffId.getOrDefault(staff.getId(), Collections.emptyList());
             Set<DocumentType> uploadedTypes = staffDocs.stream()
                     .map(Document::getDocumentType)
                     .collect(Collectors.toSet());
@@ -101,10 +117,12 @@ public class DashboardService {
         stats.setTotalDocumentsRequired(totalRequired);
         stats.setTotalDocumentsUploaded(totalUploaded);
 
+        logger.debug("Dashboard stats generated successfully");
         return stats;
     }
 
     public List<DashboardStats.StaffDocumentStatus> getDocumentCompletionDetails() {
+        logger.debug("Generating document completion details");
         List<Staff> allStaff = staffRepository.findAll();
         List<DocumentType> requiredDocTypes = Arrays.asList(
                 DocumentType.CONTRACT,
@@ -112,9 +130,18 @@ public class DashboardService {
                 DocumentType.TAX_FORM
         );
 
+        // OPTIMIZED: Fetch all documents in one batch query
+        List<Long> staffIds = allStaff.stream().map(Staff::getId).collect(Collectors.toList());
+        List<Document> allDocuments = documentRepository.findByStaffIdIn(staffIds);
+        logger.debug("Fetched {} documents for {} staff members in single query", allDocuments.size(), staffIds.size());
+
+        // Group documents by staff ID
+        Map<Long, List<Document>> documentsByStaffId = allDocuments.stream()
+                .collect(Collectors.groupingBy(doc -> doc.getStaff().getId()));
+
         return allStaff.stream()
                 .map(staff -> {
-                    List<Document> staffDocs = documentRepository.findByStaffId(staff.getId());
+                    List<Document> staffDocs = documentsByStaffId.getOrDefault(staff.getId(), Collections.emptyList());
                     Set<DocumentType> uploadedTypes = staffDocs.stream()
                             .map(Document::getDocumentType)
                             .collect(Collectors.toSet());
