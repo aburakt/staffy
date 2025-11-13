@@ -1,6 +1,8 @@
-# Staff Management System
+# Staff Management System / Personel Yönetim Sistemi
 
 A comprehensive staff management application built with Spring Boot and React, featuring leave tracking, contact management, and document storage.
+
+> **🇹🇷 Türkçe Dokümantasyon:** [KURULUM_ADIMLAR.md](KURULUM_ADIMLAR.md) | [GELISTIRME_REHBERI.md](GELISTIRME_REHBERI.md)
 
 ## Features
 
@@ -16,7 +18,7 @@ A comprehensive staff management application built with Spring Boot and React, f
 ### Backend
 - **Spring Boot 3.2.0** - Java framework
 - **Spring Data JPA** - Database access
-- **H2 Database** - In-memory database (can be replaced with PostgreSQL/MySQL)
+- **PostgreSQL** - Production database (H2 also supported for development)
 - **Lombok** - Reduces boilerplate code
 - **Maven** - Dependency management
 
@@ -35,32 +37,35 @@ A comprehensive staff management application built with Spring Boot and React, f
 
 - Java 17 or higher
 - Node.js 18 or higher
+- PostgreSQL 14 or higher
 - npm or yarn
 
-### Backend Setup
+### Quick Setup
 
-1. Navigate to the backend directory:
+**For detailed Turkish documentation, see [KURULUM_ADIMLAR.md](KURULUM_ADIMLAR.md)**
+
+1. **Setup PostgreSQL Database:**
 ```bash
-cd backend
+psql -U postgres
+CREATE DATABASE staffdb;
+\q
 ```
 
-2. Build and run the Spring Boot application:
+2. **Configure Backend:**
+
+Copy `application.properties.example` to `application.properties` and update database credentials:
+```properties
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+```
+
+3. **Run Backend:**
 ```bash
+cd backend
 ./mvnw spring-boot:run
 ```
 
-Or if you're on Windows:
-```bash
-mvnw.cmd spring-boot:run
-```
-
 The backend will start on `http://localhost:8080`
-
-3. Access H2 Console (optional):
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:staffdb`
-- Username: `sa`
-- Password: (leave empty)
 
 ### Frontend Setup
 
@@ -173,15 +178,27 @@ This data is automatically created on application startup via `DataInitializer.j
 
 ### Database Configuration
 
-To switch from H2 to PostgreSQL/MySQL, update `application.properties`:
+The project is configured to use PostgreSQL by default. To switch back to H2 for development:
 
-```properties
-# PostgreSQL example
-spring.datasource.url=jdbc:postgresql://localhost:5432/staffdb
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-```
+1. Uncomment H2 dependency in `pom.xml`
+2. Comment out PostgreSQL dependency
+3. Update `application.properties` with H2 configuration
+
+For detailed setup and development guide in Turkish, see [GELISTIRME_REHBERI.md](GELISTIRME_REHBERI.md)
+
+## Documentation
+
+- **[KURULUM_ADIMLAR.md](KURULUM_ADIMLAR.md)** - Quick setup guide (Turkish)
+- **[GELISTIRME_REHBERI.md](GELISTIRME_REHBERI.md)** - Comprehensive development guide (Turkish)
+  - PostgreSQL setup
+  - LazyVim development workflow
+  - Project structure explanations
+  - Feature implementation guide
+  - 10 future feature suggestions
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 

@@ -3,6 +3,7 @@ server.port=8080
 spring.application.name=staff-management
 
 # PostgreSQL Database Configuration
+# Kendi veritabanı bilgilerinizi buraya yazın
 spring.datasource.url=jdbc:postgresql://localhost:5432/staffdb
 spring.datasource.username=postgres
 spring.datasource.password=postgres
@@ -10,6 +11,7 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA Configuration
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+# İlk çalıştırmada "create" kullanın, sonrasında "update" yapın
 spring.jpa.hibernate.ddl-auto=create
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
