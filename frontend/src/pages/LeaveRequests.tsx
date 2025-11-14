@@ -7,11 +7,15 @@ import { certificateApi, exportApi } from '@/services/api';
 import { useLeaveRequests, useApproveLeaveRequest, useRejectLeaveRequest } from '@/hooks/useLeaveRequests';
 import { LeaveStatus } from '@/types';
 import { Plus, Check, X, Download, FileDown, Loader2 } from 'lucide-react';
-import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 export default function LeaveRequests() {
+  const { t } = useTranslation();
   const { data: leaveRequests = [], isLoading, error, refetch } = useLeaveRequests();
   const approveMutation = useApproveLeaveRequest();
   const rejectMutation = useRejectLeaveRequest();
@@ -21,59 +25,67 @@ export default function LeaveRequests() {
   const handleApprove = async (id: number) => {
     try {
       await approveMutation.mutateAsync(id);
-      toast.success('Leave request approved successfully!');
+      toast.success(t.leave.approveSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to approve leave request');
+      toast.error(error.message || t.leave.approveError);
     }
   };
 
   const handleReject = async (id: number) => {
-    const reason = prompt('Enter rejection reason:');
+    const reason = prompt('Red sebepini giriniz:');
     if (!reason || !reason.trim()) {
-      toast.warning('Rejection reason is required');
+      toast.warning('Red sebebi gereklidir');
       return;
     }
 
     try {
       await rejectMutation.mutateAsync({ id, reason });
-      toast.success('Leave request rejected');
+      toast.success(t.leave.rejectSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to reject leave request');
+      toast.error(error.message || t.leave.rejectError);
     }
   };
 
   const handleDownloadCertificate = async (id: number) => {
-    if (downloadingId) return; // Prevent multiple downloads
+    if (downloadingId) return;
 
     try {
       setDownloadingId(id);
       const blob = await certificateApi.downloadLeaveCertificate(id);
-      exportApi.downloadBlob(blob, `izin-belgesi-${id}.docx`);
-      toast.success('Certificate downloaded successfully');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `izin-belgesi-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Belge indirildi');
     } catch (error) {
-      toast.error('Failed to download certificate');
+      toast.error(t.leave.downloadError);
     } finally {
       setDownloadingId(null);
     }
   };
 
   const handleExport = async () => {
-    if (exportingData) return; // Prevent spam clicks
+    if (exportingData) return;
 
     try {
       setExportingData(true);
       const blob = await exportApi.exportLeaveRequests();
-      exportApi.downloadBlob(blob, 'leave_requests.csv');
-      toast.success('Leave requests exported successfully');
+      exportApi.downloadBlob(blob, 'izin-talepleri.csv');
+      toast.success(t.leave.exportSuccess);
     } catch (error) {
-      toast.error('Failed to export leave requests');
+      console.error('Failed to export leave requests:', error);
+      toast.error(t.leave.exportError);
     } finally {
       setExportingData(false);
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <TableSkeleton rows={5} columns={7} />;
   }
 
   if (error) {
@@ -83,24 +95,20 @@ export default function LeaveRequests() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Leave Requests</h1>
+        <h1 className="text-3xl font-bold">{t.leave.title}</h1>
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={exportingData}
-          >
+          <Button variant="outline" onClick={handleExport} disabled={exportingData}>
             {exportingData ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <FileDown className="mr-2 h-4 w-4" />
             )}
-            Export CSV
+            {t.common.exportCsv}
           </Button>
-          <Link to="/leaves/new">
+          <Link to="/leave-requests/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              New Leave Request
+              {t.leave.addRequest}
             </Button>
           </Link>
         </div>
@@ -108,35 +116,31 @@ export default function LeaveRequests() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Leave Requests</CardTitle>
+          <CardTitle>Tüm İzin Talepleri</CardTitle>
         </CardHeader>
         <CardContent>
           {leaveRequests.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No leave requests found
-            </div>
+            <p className="text-center py-8 text-muted-foreground">{t.leave.noRequests}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Staff Member</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Personel</TableHead>
+                  <TableHead>{t.leave.leaveType}</TableHead>
+                  <TableHead>{t.leave.startDate}</TableHead>
+                  <TableHead>{t.leave.endDate}</TableHead>
+                  <TableHead>{t.leave.daysRequested}</TableHead>
+                  <TableHead>{t.leave.status}</TableHead>
+                  <TableHead>{t.leave.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leaveRequests.map((leave) => (
                   <TableRow key={leave.id}>
-                    <TableCell className="font-medium">
-                      {leave.staff?.firstName} {leave.staff?.lastName}
-                    </TableCell>
+                    <TableCell className="font-medium">{leave.staffName}</TableCell>
                     <TableCell>{leave.leaveType}</TableCell>
-                    <TableCell>{leave.startDate}</TableCell>
-                    <TableCell>{leave.endDate}</TableCell>
+                    <TableCell>{format(new Date(leave.startDate), 'dd MMM yyyy', { locale: tr })}</TableCell>
+                    <TableCell>{format(new Date(leave.endDate), 'dd MMM yyyy', { locale: tr })}</TableCell>
                     <TableCell>{leave.daysRequested}</TableCell>
                     <TableCell>
                       <span
@@ -148,7 +152,9 @@ export default function LeaveRequests() {
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {leave.status}
+                        {leave.status === LeaveStatus.APPROVED ? t.leave.approved :
+                         leave.status === LeaveStatus.PENDING ? t.leave.pending :
+                         t.leave.rejected}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -189,9 +195,9 @@ export default function LeaveRequests() {
                             disabled={downloadingId === leave.id}
                           >
                             {downloadingId === leave.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Download className="h-4 w-4 text-blue-600" />
+                              <Download className="h-4 w-4" />
                             )}
                           </Button>
                         )}

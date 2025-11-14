@@ -3,13 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { useStaffById } from '@/hooks/useStaff';
 import { useLeaveRequestsByStaff } from '@/hooks/useLeaveRequests';
 import { useDocumentsByStaff } from '@/hooks/useDocuments';
+import { useTranslation } from '@/i18n/useTranslation';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 export default function StaffDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const staffId = id ? parseInt(id) : 0;
 
@@ -20,7 +24,7 @@ export default function StaffDetail() {
   const isLoading = staffLoading || leavesLoading || docsLoading;
 
   if (staffLoading) {
-    return <LoadingSpinner />;
+    return <TableSkeleton rows={3} columns={4} />;
   }
 
   if (staffError) {
@@ -28,7 +32,7 @@ export default function StaffDetail() {
   }
 
   if (!staff) {
-    return <ErrorState title="Staff member not found" message="The requested staff member could not be found" />;
+    return <ErrorState title={t.staff.staffNotFound} message={t.error.notFound} />;
   }
 
   return (
@@ -47,7 +51,7 @@ export default function StaffDetail() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle>{t.staff.personalInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
@@ -64,39 +68,39 @@ export default function StaffDetail() {
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>DOB: {staff.dateOfBirth}</span>
+              <span>Doğum Tarihi: {staff.dateOfBirth}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Employment Details</CardTitle>
+            <CardTitle>{t.staff.employmentDetails}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Position:</span>
+              <span className="text-muted-foreground">{t.staff.position}:</span>
               <span className="font-medium">{staff.position}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Department:</span>
+              <span className="text-muted-foreground">{t.staff.department}:</span>
               <span className="font-medium">{staff.department}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Hire Date:</span>
+              <span className="text-muted-foreground">{t.staff.hireDate}:</span>
               <span className="font-medium">{staff.hireDate}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Annual Leave:</span>
-              <span className="font-medium">{staff.annualLeaveDays} days</span>
+              <span className="text-muted-foreground">{t.staff.annualLeave}:</span>
+              <span className="font-medium">{staff.annualLeaveDays} {t.staff.days}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Used Leave:</span>
-              <span className="font-medium">{staff.usedLeaveDays} days</span>
+              <span className="text-muted-foreground">{t.staff.usedLeave}:</span>
+              <span className="font-medium">{staff.usedLeaveDays} {t.staff.days}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Remaining Leave:</span>
-              <span className="font-bold text-primary">{staff.remainingLeaveDays} days</span>
+              <span className="text-muted-foreground">{t.staff.remainingLeave}:</span>
+              <span className="font-bold text-primary">{staff.remainingLeaveDays} {t.staff.days}</span>
             </div>
           </CardContent>
         </Card>
@@ -104,26 +108,26 @@ export default function StaffDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Leave History</CardTitle>
+          <CardTitle>{t.staff.leaveHistory}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Reason</TableHead>
+                <TableHead>{t.leave.leaveType}</TableHead>
+                <TableHead>{t.leave.startDate}</TableHead>
+                <TableHead>{t.leave.endDate}</TableHead>
+                <TableHead>Gün Sayısı</TableHead>
+                <TableHead>{t.leave.status}</TableHead>
+                <TableHead>{t.leave.reason}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {leaveRequests.map((leave) => (
                 <TableRow key={leave.id}>
                   <TableCell>{leave.leaveType}</TableCell>
-                  <TableCell>{leave.startDate}</TableCell>
-                  <TableCell>{leave.endDate}</TableCell>
+                  <TableCell>{format(new Date(leave.startDate), 'dd MMM yyyy', { locale: tr })}</TableCell>
+                  <TableCell>{format(new Date(leave.endDate), 'dd MMM yyyy', { locale: tr })}</TableCell>
                   <TableCell>{leave.daysRequested}</TableCell>
                   <TableCell>
                     <span
@@ -135,7 +139,9 @@ export default function StaffDetail() {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {leave.status}
+                      {leave.status === 'APPROVED' ? t.leave.approved :
+                       leave.status === 'PENDING' ? t.leave.pending :
+                       t.leave.rejected}
                     </span>
                   </TableCell>
                   <TableCell>{leave.reason}</TableCell>
@@ -148,16 +154,16 @@ export default function StaffDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Documents</CardTitle>
+          <CardTitle>{t.documents.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Document Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Upload Date</TableHead>
-                <TableHead>Uploaded By</TableHead>
+                <TableHead>{t.documents.documentName}</TableHead>
+                <TableHead>{t.documents.documentType}</TableHead>
+                <TableHead>{t.documents.uploadDate}</TableHead>
+                <TableHead>{t.documents.uploadedBy}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -165,7 +171,7 @@ export default function StaffDetail() {
                 <TableRow key={doc.id}>
                   <TableCell className="font-medium">{doc.documentName}</TableCell>
                   <TableCell>{doc.documentType}</TableCell>
-                  <TableCell>{new Date(doc.uploadDate!).toLocaleDateString()}</TableCell>
+                  <TableCell>{doc.uploadDate ? format(new Date(doc.uploadDate), 'dd MMM yyyy', { locale: tr }) : '-'}</TableCell>
                   <TableCell>{doc.uploadedBy}</TableCell>
                 </TableRow>
               ))}
