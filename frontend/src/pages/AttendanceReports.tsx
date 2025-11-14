@@ -8,16 +8,19 @@ import type { AttendanceRecord } from '@/types';
 import { AttendanceStatus } from '@/types';
 import { Calendar, Clock, TrendingUp, AlertCircle, FileDown, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { AttendanceReportsSkeleton } from '@/components/skeletons/AttendanceReportsSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { StatsCard } from '@/components/animated/StatsCard';
 import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useStaff } from '@/hooks/useStaff';
 import { useMonthlyReport } from '@/hooks/useAttendance';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function AttendanceReports() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [selectedStaffId, setSelectedStaffId] = useState<string>(searchParams.get('staff') || '');
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -54,17 +57,17 @@ export default function AttendanceReports() {
 
   const prepareChartData = () => {
     return records.slice(0, 15).map(record => ({
-      date: format(new Date(record.date), 'MMM dd'),
+      date: format(new Date(record.date), 'dd MMM', { locale: tr }),
       hours: parseFloat(((record.totalWorkMinutes || 0) / 60).toFixed(1)),
       overtime: parseFloat(((record.overtimeMinutes || 0) / 60).toFixed(1)),
     }));
   };
 
   const formatDuration = (minutes?: number) => {
-    if (!minutes) return '0h 0m';
+    if (!minutes) return '0s 0d';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    return `${hours}s ${mins}d`;
   };
 
   const formatTime = (timeString?: string) => {
@@ -74,7 +77,7 @@ export default function AttendanceReports() {
 
   const handleExport = async () => {
     if (!selectedStaffId) {
-      toast.warning('Please select a staff member');
+      toast.warning(t.attendance.reports.selectStaffWarning);
       return;
     }
 
@@ -85,11 +88,11 @@ export default function AttendanceReports() {
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
       const endDate = new Date(year, month, 0).toISOString().split('T')[0];
       const blob = await exportApi.exportAttendance(parseInt(selectedStaffId), startDate, endDate);
-      exportApi.downloadBlob(blob, `attendance_${selectedStaffId}_${year}_${month}.csv`);
-      toast.success('Attendance data exported successfully');
+      exportApi.downloadBlob(blob, `yoklama_${selectedStaffId}_${year}_${month}.csv`);
+      toast.success(t.attendance.reports.exportSuccess);
     } catch (error) {
       console.error('Failed to export attendance:', error);
-      toast.error('Failed to export attendance data');
+      toast.error(t.attendance.reports.exportError);
     } finally {
       setExportingData(false);
     }
@@ -104,7 +107,7 @@ export default function AttendanceReports() {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   if (staffLoading) {
-    return <LoadingSpinner />;
+    return <AttendanceReportsSkeleton />;
   }
 
   if (staffError) {
@@ -120,7 +123,7 @@ export default function AttendanceReports() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Attendance Reports
+          {t.attendance.reports.title}
         </motion.h1>
         <Button variant="outline" onClick={handleExport} disabled={!selectedStaffId || exportingData}>
           {exportingData ? (
@@ -128,7 +131,7 @@ export default function AttendanceReports() {
           ) : (
             <FileDown className="mr-2 h-4 w-4" />
           )}
-          Export CSV
+          {t.common.exportCsv}
         </Button>
       </div>
 
@@ -139,15 +142,15 @@ export default function AttendanceReports() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Filter Options</CardTitle>
+            <CardTitle>{t.attendance.reports.filterOptions}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="text-sm font-medium mb-2 block">Staff Member</label>
+                <label className="text-sm font-medium mb-2 block">{t.attendance.reports.staffMember}</label>
                 <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select staff member" />
+                    <SelectValue placeholder={t.attendance.reports.staffMember} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeStaff.map((member) => (
@@ -160,7 +163,7 @@ export default function AttendanceReports() {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Year</label>
+                <label className="text-sm font-medium mb-2 block">{t.attendance.reports.year}</label>
                 <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -176,7 +179,7 @@ export default function AttendanceReports() {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Month</label>
+                <label className="text-sm font-medium mb-2 block">{t.attendance.reports.month}</label>
                 <Select value={month.toString()} onValueChange={(v) => setMonth(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -184,7 +187,7 @@ export default function AttendanceReports() {
                   <SelectContent>
                     {months.map((m) => (
                       <SelectItem key={m} value={m.toString()}>
-                        {format(new Date(2024, m - 1, 1), 'MMMM')}
+                        {format(new Date(2024, m - 1, 1), 'MMMM', { locale: tr })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -199,42 +202,42 @@ export default function AttendanceReports() {
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <StatsCard
-              title="Total Days"
+              title={t.attendance.reports.totalDays}
               value={stats.totalDays}
               icon={Calendar}
-              description="Days with records"
+              description={t.attendance.reports.daysWithRecords}
               delay={0.2}
             />
 
             <StatsCard
-              title="Present Days"
+              title={t.attendance.reports.presentDays}
               value={stats.presentDays}
               icon={Calendar}
-              description="On-time attendance"
+              description={t.attendance.reports.onTimeAttendance}
               delay={0.25}
             />
 
             <StatsCard
-              title="Late Days"
+              title={t.attendance.reports.lateDays}
               value={stats.lateDays}
               icon={AlertCircle}
-              description="Late arrivals"
+              description={t.attendance.reports.lateArrivals}
               delay={0.3}
             />
 
             <StatsCard
-              title="Total Hours"
+              title={t.attendance.reports.totalHours}
               value={stats.totalWorkHours}
               icon={Clock}
-              description="Work hours this month"
+              description={t.attendance.reports.workHoursThisMonth}
               delay={0.35}
             />
 
             <StatsCard
-              title="Overtime"
+              title={t.attendance.clock.overtime}
               value={stats.totalOvertimeHours}
               icon={TrendingUp}
-              description="Extra hours worked"
+              description={t.attendance.reports.extraHoursWorked}
               delay={0.4}
             />
           </div>
@@ -246,7 +249,7 @@ export default function AttendanceReports() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Work Hours Chart (Last 15 Days)</CardTitle>
+                <CardTitle>{t.attendance.reports.workHoursChart} ({t.attendance.reports.lastDays})</CardTitle>
               </CardHeader>
               <CardContent>
                 {chartData.length > 0 ? (
@@ -254,17 +257,17 @@ export default function AttendanceReports() {
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
-                      <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
+                      <YAxis label={{ value: 'Saat', angle: -90, position: 'insideLeft' }} />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="hours" fill="#8884d8" name="Regular Hours" />
-                      <Bar dataKey="overtime" fill="#82ca9d" name="Overtime" />
+                      <Bar dataKey="hours" fill="#8884d8" name="Normal Saat" />
+                      <Bar dataKey="overtime" fill="#82ca9d" name="Mesai" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No attendance data for this period</p>
+                    <p>{t.attendance.reports.noData}</p>
                   </div>
                 )}
               </CardContent>
@@ -278,12 +281,12 @@ export default function AttendanceReports() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Detailed Records</CardTitle>
+                <CardTitle>{t.attendance.reports.detailedRecords}</CardTitle>
               </CardHeader>
               <CardContent>
                 {recordsLoading ? (
                   <div className="text-center py-8">
-                    <LoadingSpinner />
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
                   </div>
                 ) : records.length > 0 ? (
                   <div className="space-y-2">
@@ -296,27 +299,27 @@ export default function AttendanceReports() {
                         className="grid grid-cols-6 gap-4 p-3 border rounded-lg items-center"
                       >
                         <div>
-                          <p className="text-sm text-muted-foreground">Date</p>
-                          <p className="font-medium">{format(new Date(record.date), 'MMM dd, yyyy')}</p>
+                          <p className="text-sm text-muted-foreground">{t.attendance.reports.date}</p>
+                          <p className="font-medium">{format(new Date(record.date), 'dd MMM yyyy', { locale: tr })}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Clock In</p>
+                          <p className="text-sm text-muted-foreground">{t.attendance.clock.clockInTime}</p>
                           <p className="font-medium">{formatTime(record.clockInTime)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Clock Out</p>
+                          <p className="text-sm text-muted-foreground">{t.attendance.clock.clockOutTime}</p>
                           <p className="font-medium">{formatTime(record.clockOutTime)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Work Time</p>
+                          <p className="text-sm text-muted-foreground">{t.attendance.reports.workTime}</p>
                           <p className="font-medium">{formatDuration(record.totalWorkMinutes)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Overtime</p>
+                          <p className="text-sm text-muted-foreground">{t.attendance.clock.overtime}</p>
                           <p className="font-medium text-blue-600">{formatDuration(record.overtimeMinutes)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Status</p>
+                          <p className="text-sm text-muted-foreground">Durum</p>
                           <span
                             className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
                               record.status === AttendanceStatus.PRESENT
@@ -326,7 +329,10 @@ export default function AttendanceReports() {
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {record.status}
+                            {record.status === AttendanceStatus.PRESENT ? t.attendance.status.present :
+                             record.status === AttendanceStatus.LATE ? t.attendance.status.late :
+                             record.status === AttendanceStatus.ON_BREAK ? t.attendance.status.onBreak :
+                             record.status}
                           </span>
                         </div>
                       </motion.div>
@@ -335,7 +341,7 @@ export default function AttendanceReports() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No attendance records found for this period</p>
+                    <p>{t.attendance.reports.noData}</p>
                   </div>
                 )}
               </CardContent>
