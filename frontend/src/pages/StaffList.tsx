@@ -8,12 +8,14 @@ import { useStaff } from '@/hooks/useStaff';
 import { Plus, Eye, Download, Loader2 } from 'lucide-react';
 import { ViewToggle } from '@/components/animated/ViewToggle';
 import { StaffCard } from '@/components/animated/StaffCard';
-import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { StaffListSkeleton } from '@/components/skeletons/StaffListSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function StaffList() {
+  const { t } = useTranslation();
   const [view, setView] = useState<'table' | 'card'>('table');
   const { data: staff = [], isLoading, error, refetch } = useStaff();
   const [exportingData, setExportingData] = useState(false);
@@ -24,18 +26,18 @@ export default function StaffList() {
     try {
       setExportingData(true);
       const blob = await exportApi.exportStaff();
-      exportApi.downloadBlob(blob, 'staff.csv');
-      toast.success('Staff data exported successfully');
+      exportApi.downloadBlob(blob, 'personel.csv');
+      toast.success(t.staff.exportSuccess);
     } catch (error) {
       console.error('Failed to export staff:', error);
-      toast.error('Failed to export staff data');
+      toast.error(t.staff.exportError);
     } finally {
       setExportingData(false);
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <StaffListSkeleton />;
   }
 
   if (error) {
@@ -51,7 +53,7 @@ export default function StaffList() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Staff Management
+          {t.staff.title}
         </motion.h1>
         <div className="flex gap-3 items-center">
           <ViewToggle view={view} onViewChange={setView} />
@@ -61,12 +63,12 @@ export default function StaffList() {
             ) : (
               <Download className="mr-2 h-4 w-4" />
             )}
-            Export CSV
+            {t.common.exportCsv}
           </Button>
           <Link to="/staff/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Staff
+              {t.staff.addStaff}
             </Button>
           </Link>
         </div>
@@ -83,19 +85,19 @@ export default function StaffList() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>All Staff Members</CardTitle>
+                <CardTitle>Tüm Personel</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Leave Days</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>Ad Soyad</TableHead>
+                      <TableHead>{t.staff.email}</TableHead>
+                      <TableHead>{t.staff.position}</TableHead>
+                      <TableHead>{t.staff.department}</TableHead>
+                      <TableHead>İzin Günleri</TableHead>
+                      <TableHead>{t.staff.status}</TableHead>
+                      <TableHead>İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -118,7 +120,7 @@ export default function StaffList() {
                               member.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {member.active ? 'Active' : 'Inactive'}
+                            {member.active ? t.staff.active : t.staff.inactive}
                           </span>
                         </TableCell>
                         <TableCell>
