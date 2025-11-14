@@ -5,23 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { exportApi } from '@/services/api';
 import { useStaff } from '@/hooks/useStaff';
-import { Plus, Eye, Download } from 'lucide-react';
+import { Plus, Eye, Download, Loader2 } from 'lucide-react';
 import { ViewToggle } from '@/components/animated/ViewToggle';
 import { StaffCard } from '@/components/animated/StaffCard';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { ErrorState } from '@/components/ErrorState';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function StaffList() {
   const [view, setView] = useState<'table' | 'card'>('table');
-  const { data: staff = [], isLoading, error } = useStaff();
+  const { data: staff = [], isLoading, error, refetch } = useStaff();
+  const [exportingData, setExportingData] = useState(false);
 
   const handleExport = async () => {
+    if (exportingData) return; // Prevent spam clicks
+
     try {
+      setExportingData(true);
       const blob = await exportApi.exportStaff();
       exportApi.downloadBlob(blob, 'staff.csv');
+      toast.success('Staff data exported successfully');
     } catch (error) {
       console.error('Failed to export staff:', error);
-      alert('Failed to export staff data');
+      toast.error('Failed to export staff data');
+    } finally {
+      setExportingData(false);
     }
   };
 
@@ -30,14 +39,7 @@ export default function StaffList() {
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-500 font-semibold">Failed to load staff</p>
-          <p className="text-sm text-gray-500 mt-2">{error.message}</p>
-        </div>
-      </div>
-    );
+    return <ErrorState error={error} onRetry={() => refetch()} />;
   }
 
   return (
@@ -53,8 +55,12 @@ export default function StaffList() {
         </motion.h1>
         <div className="flex gap-3 items-center">
           <ViewToggle view={view} onViewChange={setView} />
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={handleExport} disabled={exportingData}>
+            {exportingData ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
             Export CSV
           </Button>
           <Link to="/staff/new">

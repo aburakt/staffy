@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { UserProvider } from './contexts/UserContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -40,6 +41,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </UserProvider>
+      <Toaster position="top-right" richColors closeButton />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
