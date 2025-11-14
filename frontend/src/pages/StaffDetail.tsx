@@ -1,48 +1,34 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { staffApi, leaveRequestApi, documentApi } from '@/services/api';
-import type { Staff, LeaveRequest, Document } from '@/types';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { ErrorState } from '@/components/ErrorState';
+import { useStaffById } from '@/hooks/useStaff';
+import { useLeaveRequestsByStaff } from '@/hooks/useLeaveRequests';
+import { useDocumentsByStaff } from '@/hooks/useDocuments';
 
 export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
-  const [staff, setStaff] = useState<Staff | null>(null);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
+  const staffId = id ? parseInt(id) : 0;
 
-  useEffect(() => {
-    if (id) {
-      loadData(parseInt(id));
-    }
-  }, [id]);
+  const { data: staff, isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useStaffById(staffId);
+  const { data: leaveRequests = [], isLoading: leavesLoading } = useLeaveRequestsByStaff(staffId);
+  const { data: documents = [], isLoading: docsLoading } = useDocumentsByStaff(staffId);
 
-  const loadData = async (staffId: number) => {
-    try {
-      const [staffData, leaves, docs] = await Promise.all([
-        staffApi.getById(staffId),
-        leaveRequestApi.getByStaffId(staffId),
-        documentApi.getByStaffId(staffId),
-      ]);
-      setStaff(staffData);
-      setLeaveRequests(leaves);
-      setDocuments(docs);
-    } catch (error) {
-      console.error('Failed to load staff details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isLoading = staffLoading || leavesLoading || docsLoading;
 
-  if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
+  if (staffLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (staffError) {
+    return <ErrorState error={staffError} onRetry={() => refetchStaff()} />;
   }
 
   if (!staff) {
-    return <div className="text-center py-8">Staff member not found</div>;
+    return <ErrorState title="Staff member not found" message="The requested staff member could not be found" />;
   }
 
   return (

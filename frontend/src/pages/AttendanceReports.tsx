@@ -1,65 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { staffApi, attendanceApi, exportApi } from '@/services/api';
-import type { Staff, AttendanceRecord } from '@/types';
+import { exportApi } from '@/services/api';
+import type { AttendanceRecord } from '@/types';
 import { AttendanceStatus } from '@/types';
-import { Calendar, Clock, TrendingUp, AlertCircle, FileDown } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, AlertCircle, FileDown, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { ErrorState } from '@/components/ErrorState';
 import { StatsCard } from '@/components/animated/StatsCard';
 import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useStaff } from '@/hooks/useStaff';
+import { useMonthlyReport } from '@/hooks/useAttendance';
+import { toast } from 'sonner';
 
 export default function AttendanceReports() {
   const [searchParams] = useSearchParams();
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string>(searchParams.get('staff') || '');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [exportingData, setExportingData] = useState(false);
+
+  const { data: allStaff = [], isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useStaff();
+  const activeStaff = allStaff.filter(s => s.active);
+
+  const staffId = selectedStaffId ? parseInt(selectedStaffId) : 0;
+  const { data: records = [], isLoading: recordsLoading, error: recordsError } = useMonthlyReport(staffId, year, month);
 
   useEffect(() => {
-    loadStaff();
-  }, []);
-
-  useEffect(() => {
-    if (selectedStaffId) {
-      loadAttendanceData();
+    if (activeStaff.length > 0 && !selectedStaffId) {
+      setSelectedStaffId(activeStaff[0].id!.toString());
     }
-  }, [selectedStaffId, year, month]);
-
-  const loadStaff = async () => {
-    try {
-      const data = await staffApi.getAll();
-      setStaff(data.filter((s: Staff) => s.active));
-      if (!selectedStaffId && data.length > 0) {
-        setSelectedStaffId(data[0].id!.toString());
-      }
-    } catch (error) {
-      console.error('Failed to load staff:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAttendanceData = async () => {
-    if (!selectedStaffId) return;
-
-    setLoading(true);
-    try {
-      const data = await attendanceApi.getMonthlyReport(parseInt(selectedStaffId), year, month);
-      setRecords(data);
-    } catch (error) {
-      console.error('Failed to load attendance data:', error);
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [activeStaff, selectedStaffId]);
 
   const calculateStats = () => {
     const totalDays = records.length;
@@ -99,22 +74,28 @@ export default function AttendanceReports() {
 
   const handleExport = async () => {
     if (!selectedStaffId) {
-      alert('Please select a staff member');
+      toast.warning('Please select a staff member');
       return;
     }
 
+    if (exportingData) return; // Prevent spam clicks
+
     try {
+      setExportingData(true);
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
       const endDate = new Date(year, month, 0).toISOString().split('T')[0];
       const blob = await exportApi.exportAttendance(parseInt(selectedStaffId), startDate, endDate);
       exportApi.downloadBlob(blob, `attendance_${selectedStaffId}_${year}_${month}.csv`);
+      toast.success('Attendance data exported successfully');
     } catch (error) {
       console.error('Failed to export attendance:', error);
-      alert('Failed to export attendance data');
+      toast.error('Failed to export attendance data');
+    } finally {
+      setExportingData(false);
     }
   };
 
-  const selectedStaff = staff.find(s => s.id?.toString() === selectedStaffId);
+  const selectedStaff = activeStaff.find(s => s.id?.toString() === selectedStaffId);
   const stats = calculateStats();
   const chartData = prepareChartData();
 
@@ -122,8 +103,12 @@ export default function AttendanceReports() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
-  if (loading && !selectedStaffId) {
+  if (staffLoading) {
     return <LoadingSpinner />;
+  }
+
+  if (staffError) {
+    return <ErrorState error={staffError} onRetry={() => refetchStaff()} />;
   }
 
   return (
@@ -137,8 +122,12 @@ export default function AttendanceReports() {
         >
           Attendance Reports
         </motion.h1>
-        <Button variant="outline" onClick={handleExport} disabled={!selectedStaffId}>
-          <FileDown className="mr-2 h-4 w-4" />
+        <Button variant="outline" onClick={handleExport} disabled={!selectedStaffId || exportingData}>
+          {exportingData ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileDown className="mr-2 h-4 w-4" />
+          )}
           Export CSV
         </Button>
       </div>
@@ -161,7 +150,7 @@ export default function AttendanceReports() {
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
-                    {staff.map((member) => (
+                    {activeStaff.map((member) => (
                       <SelectItem key={member.id} value={member.id!.toString()}>
                         {member.firstName} {member.lastName}
                       </SelectItem>
@@ -292,7 +281,7 @@ export default function AttendanceReports() {
                 <CardTitle>Detailed Records</CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {recordsLoading ? (
                   <div className="text-center py-8">
                     <LoadingSpinner />
                   </div>
