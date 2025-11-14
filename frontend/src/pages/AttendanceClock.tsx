@@ -2,117 +2,87 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { staffApi, attendanceApi } from '@/services/api';
-import type { Staff, AttendanceRecord } from '@/types';
+import type { AttendanceRecord } from '@/types';
 import { AttendanceStatus } from '@/types';
-import { Clock, LogIn, LogOut, Coffee, Play, Calendar } from 'lucide-react';
+import { Clock, LogIn, LogOut, Coffee, Play, Calendar, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { ErrorState } from '@/components/ErrorState';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { useStaff } from '@/hooks/useStaff';
+import { useTodayAttendance, useClockIn, useClockOut, useStartBreak, useEndBreak } from '@/hooks/useAttendance';
+import { toast } from 'sonner';
 
 export default function AttendanceClock() {
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
-  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  const { data: allStaff = [], isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useStaff();
+  const activeStaff = allStaff.filter(s => s.active);
+
+  const staffId = selectedStaffId ? parseInt(selectedStaffId) : 0;
+  const { data: todayAttendance, isLoading: attendanceLoading, error: attendanceError } = useTodayAttendance(staffId);
+
+  const clockInMutation = useClockIn();
+  const clockOutMutation = useClockOut();
+  const startBreakMutation = useStartBreak();
+  const endBreakMutation = useEndBreak();
+
   useEffect(() => {
-    loadStaff();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    if (selectedStaffId) {
-      loadTodayAttendance();
+    if (activeStaff.length > 0 && !selectedStaffId) {
+      setSelectedStaffId(activeStaff[0].id!.toString());
     }
-  }, [selectedStaffId]);
-
-  const loadStaff = async () => {
-    try {
-      const data = await staffApi.getAll();
-      setStaff(data.filter((s: Staff) => s.active));
-      if (data.length > 0) {
-        setSelectedStaffId(data[0].id!.toString());
-      }
-    } catch (error) {
-      console.error('Failed to load staff:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTodayAttendance = async () => {
-    if (!selectedStaffId) return;
-
-    try {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const records = await attendanceApi.getByDate(parseInt(selectedStaffId), today);
-      setTodayAttendance(records.length > 0 ? records[0] : null);
-    } catch (error) {
-      console.error('Failed to load attendance:', error);
-      setTodayAttendance(null);
-    }
-  };
+  }, [activeStaff, selectedStaffId]);
 
   const handleClockIn = async () => {
-    if (!selectedStaffId) return;
+    if (!staffId) return;
 
-    setActionLoading(true);
     try {
       const location = 'Office'; // Could be enhanced with geolocation
-      const record = await attendanceApi.clockIn(parseInt(selectedStaffId), location);
-      setTodayAttendance(record);
-    } catch (error) {
-      console.error('Failed to clock in:', error);
-    } finally {
-      setActionLoading(false);
+      await clockInMutation.mutateAsync({ staffId, location });
+      toast.success('Clocked in successfully!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to clock in');
     }
   };
 
   const handleClockOut = async () => {
-    if (!selectedStaffId) return;
+    if (!staffId) return;
 
-    setActionLoading(true);
     try {
       const location = 'Office';
-      const record = await attendanceApi.clockOut(parseInt(selectedStaffId), location);
-      setTodayAttendance(record);
-    } catch (error) {
-      console.error('Failed to clock out:', error);
-    } finally {
-      setActionLoading(false);
+      await clockOutMutation.mutateAsync({ staffId, location });
+      toast.success('Clocked out successfully!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to clock out');
     }
   };
 
   const handleBreakStart = async () => {
-    if (!selectedStaffId) return;
+    if (!staffId) return;
 
-    setActionLoading(true);
     try {
-      const record = await attendanceApi.breakStart(parseInt(selectedStaffId));
-      setTodayAttendance(record);
-    } catch (error) {
-      console.error('Failed to start break:', error);
-    } finally {
-      setActionLoading(false);
+      await startBreakMutation.mutateAsync(staffId);
+      toast.success('Break started');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to start break');
     }
   };
 
   const handleBreakEnd = async () => {
-    if (!selectedStaffId) return;
+    if (!staffId) return;
 
-    setActionLoading(true);
     try {
-      const record = await attendanceApi.breakEnd(parseInt(selectedStaffId));
-      setTodayAttendance(record);
-    } catch (error) {
-      console.error('Failed to end break:', error);
-    } finally {
-      setActionLoading(false);
+      await endBreakMutation.mutateAsync(staffId);
+      toast.success('Break ended');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to end break');
     }
   };
 
@@ -128,13 +98,19 @@ export default function AttendanceClock() {
     return `${hours}h ${mins}m`;
   };
 
-  const selectedStaff = staff.find(s => s.id?.toString() === selectedStaffId);
+  const selectedStaff = activeStaff.find(s => s.id?.toString() === selectedStaffId);
   const isOnBreak = todayAttendance?.status === AttendanceStatus.ON_BREAK;
   const isClockedIn = !!(todayAttendance && !todayAttendance.clockOutTime);
   const isClockedOut = !!(todayAttendance && todayAttendance.clockOutTime);
+  const isActionLoading = clockInMutation.isPending || clockOutMutation.isPending ||
+                          startBreakMutation.isPending || endBreakMutation.isPending;
 
-  if (loading) {
+  if (staffLoading) {
     return <LoadingSpinner />;
+  }
+
+  if (staffError) {
+    return <ErrorState error={staffError} onRetry={() => refetchStaff()} />;
   }
 
   return (
@@ -183,7 +159,7 @@ export default function AttendanceClock() {
                       <SelectValue placeholder="Select staff member" />
                     </SelectTrigger>
                     <SelectContent>
-                      {staff.map((member) => (
+                      {activeStaff.map((member) => (
                         <SelectItem key={member.id} value={member.id!.toString()}>
                           {member.firstName} {member.lastName} - {member.position}
                         </SelectItem>
@@ -210,9 +186,13 @@ export default function AttendanceClock() {
                 className="w-full h-16 text-lg"
                 size="lg"
                 onClick={handleClockIn}
-                disabled={!selectedStaffId || isClockedIn || actionLoading}
+                disabled={!selectedStaffId || isClockedIn || isActionLoading}
               >
-                <LogIn className="h-5 w-5 mr-2" />
+                {clockInMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <LogIn className="h-5 w-5 mr-2" />
+                )}
                 Clock In
               </Button>
 
@@ -221,9 +201,13 @@ export default function AttendanceClock() {
                 size="lg"
                 variant="secondary"
                 onClick={handleBreakStart}
-                disabled={!isClockedIn || isOnBreak || isClockedOut || actionLoading}
+                disabled={!isClockedIn || isOnBreak || isClockedOut || isActionLoading}
               >
-                <Coffee className="h-5 w-5 mr-2" />
+                {startBreakMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <Coffee className="h-5 w-5 mr-2" />
+                )}
                 Start Break
               </Button>
 
@@ -232,9 +216,13 @@ export default function AttendanceClock() {
                 size="lg"
                 variant="secondary"
                 onClick={handleBreakEnd}
-                disabled={!isOnBreak || actionLoading}
+                disabled={!isOnBreak || isActionLoading}
               >
-                <Play className="h-5 w-5 mr-2" />
+                {endBreakMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <Play className="h-5 w-5 mr-2" />
+                )}
                 End Break
               </Button>
 
@@ -243,9 +231,13 @@ export default function AttendanceClock() {
                 size="lg"
                 variant="destructive"
                 onClick={handleClockOut}
-                disabled={!isClockedIn || isOnBreak || isClockedOut || actionLoading}
+                disabled={!isClockedIn || isOnBreak || isClockedOut || isActionLoading}
               >
-                <LogOut className="h-5 w-5 mr-2" />
+                {clockOutMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <LogOut className="h-5 w-5 mr-2" />
+                )}
                 Clock Out
               </Button>
             </CardContent>
