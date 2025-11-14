@@ -2,18 +2,45 @@ import type { Staff, LeaveRequest, Document, AttendanceRecord, DashboardStats, S
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Helper function for better error handling
+async function handleResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type');
+
+  // Check if backend is returning HTML (error page)
+  if (contentType?.includes('text/html')) {
+    console.error('Backend returned HTML instead of JSON. Backend might not be running or returned an error page.');
+    throw new Error('Backend bağlantı hatası. Lütfen backend\'in çalıştığından emin olun.');
+  }
+
+  // Try to parse JSON
+  let data;
+  try {
+    const text = await response.text();
+    data = text ? JSON.parse(text) : null;
+  } catch (error) {
+    console.error('JSON parse error:', error);
+    throw new Error('Sunucudan geçersiz yanıt alındı');
+  }
+
+  // Check if response is ok
+  if (!response.ok) {
+    const errorMessage = data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+
+  return data as T;
+}
+
 // Staff API
 export const staffApi = {
   getAll: async (): Promise<Staff[]> => {
     const response = await fetch(`${API_BASE_URL}/staff`);
-    if (!response.ok) throw new Error('Failed to fetch staff');
-    return response.json();
+    return handleResponse<Staff[]>(response);
   },
 
   getById: async (id: number): Promise<Staff> => {
     const response = await fetch(`${API_BASE_URL}/staff/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch staff');
-    return response.json();
+    return handleResponse<Staff>(response);
   },
 
   create: async (staff: Staff): Promise<Staff> => {
@@ -22,8 +49,7 @@ export const staffApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(staff),
     });
-    if (!response.ok) throw new Error('Failed to create staff');
-    return response.json();
+    return handleResponse<Staff>(response);
   },
 
   update: async (id: number, staff: Staff): Promise<Staff> => {
@@ -32,15 +58,16 @@ export const staffApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(staff),
     });
-    if (!response.ok) throw new Error('Failed to update staff');
-    return response.json();
+    return handleResponse<Staff>(response);
   },
 
   delete: async (id: number): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/staff/${id}`, {
       method: 'DELETE',
     });
-    if (!response.ok) throw new Error('Failed to delete staff');
+    if (!response.ok) {
+      throw new Error('Personel silinemedi');
+    }
   },
 };
 
