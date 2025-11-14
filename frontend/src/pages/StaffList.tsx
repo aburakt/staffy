@@ -1,38 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { staffApi } from '@/services/api';
-import type { Staff } from '@/types';
-import { Plus, Eye } from 'lucide-react';
+import { exportApi } from '@/services/api';
+import { useStaff } from '@/hooks/useStaff';
+import { Plus, Eye, Download } from 'lucide-react';
 import { ViewToggle } from '@/components/animated/ViewToggle';
 import { StaffCard } from '@/components/animated/StaffCard';
 import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StaffList() {
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'table' | 'card'>('table');
+  const { data: staff = [], isLoading, error } = useStaff();
 
-  useEffect(() => {
-    loadStaff();
-  }, []);
-
-  const loadStaff = async () => {
+  const handleExport = async () => {
     try {
-      const data = await staffApi.getAll();
-      setStaff(data);
+      const blob = await exportApi.exportStaff();
+      exportApi.downloadBlob(blob, 'staff.csv');
     } catch (error) {
-      console.error('Failed to load staff:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to export staff:', error);
+      alert('Failed to export staff data');
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 font-semibold">Failed to load staff</p>
+          <p className="text-sm text-gray-500 mt-2">{error.message}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -48,6 +53,10 @@ export default function StaffList() {
         </motion.h1>
         <div className="flex gap-3 items-center">
           <ViewToggle view={view} onViewChange={setView} />
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
           <Link to="/staff/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
