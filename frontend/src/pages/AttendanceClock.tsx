@@ -6,15 +6,18 @@ import type { AttendanceRecord } from '@/types';
 import { AttendanceStatus } from '@/types';
 import { Clock, LogIn, LogOut, Coffee, Play, Calendar, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LoadingSpinner } from '@/components/animated/LoadingSpinner';
+import { AttendanceClockSkeleton } from '@/components/skeletons/AttendanceClockSkeleton';
 import { ErrorState } from '@/components/ErrorState';
 import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { useStaff } from '@/hooks/useStaff';
 import { useTodayAttendance, useClockIn, useClockOut, useStartBreak, useEndBreak } from '@/hooks/useAttendance';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function AttendanceClock() {
+  const { t } = useTranslation();
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -44,11 +47,11 @@ export default function AttendanceClock() {
     if (!staffId) return;
 
     try {
-      const location = 'Office'; // Could be enhanced with geolocation
+      const location = 'Ofis';
       await clockInMutation.mutateAsync({ staffId, location });
-      toast.success('Clocked in successfully!');
+      toast.success(t.attendance.clock.clockInSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to clock in');
+      toast.error(error.message || t.attendance.clock.clockInError);
     }
   };
 
@@ -56,11 +59,11 @@ export default function AttendanceClock() {
     if (!staffId) return;
 
     try {
-      const location = 'Office';
+      const location = 'Ofis';
       await clockOutMutation.mutateAsync({ staffId, location });
-      toast.success('Clocked out successfully!');
+      toast.success(t.attendance.clock.clockOutSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to clock out');
+      toast.error(error.message || t.attendance.clock.clockOutError);
     }
   };
 
@@ -69,9 +72,9 @@ export default function AttendanceClock() {
 
     try {
       await startBreakMutation.mutateAsync(staffId);
-      toast.success('Break started');
+      toast.success(t.attendance.clock.breakStartSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to start break');
+      toast.error(error.message || t.attendance.clock.breakStartError);
     }
   };
 
@@ -80,9 +83,9 @@ export default function AttendanceClock() {
 
     try {
       await endBreakMutation.mutateAsync(staffId);
-      toast.success('Break ended');
+      toast.success(t.attendance.clock.breakEndSuccess);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to end break');
+      toast.error(error.message || t.attendance.clock.breakEndError);
     }
   };
 
@@ -106,7 +109,7 @@ export default function AttendanceClock() {
                           startBreakMutation.isPending || endBreakMutation.isPending;
 
   if (staffLoading) {
-    return <LoadingSpinner />;
+    return <AttendanceClockSkeleton />;
   }
 
   if (staffError) {
